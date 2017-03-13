@@ -1,0 +1,21 @@
+[GENERATED OBJECT FILE]
+b__caesar.o
+[PROJECT FILES]
+/home/gatsumai/Documents/programs/ada/caesar-ada/Build.gpr
+20170313012027
+[BOUND OBJECT FILES]
+/home/gatsumai/Documents/programs/ada/caesar-ada/obj/caesar.o
+[GENERATED SOURCE FILES]
+b__caesar.ads
+b__caesar.adb
+b__caesar.ali
+[RESULTING OPTIONS]
+-L/home/gatsumai/Documents/programs/ada/caesar-ada/obj/
+-L/home/gatsumai/Documents/programs/ada/caesar-ada/obj/
+-L/usr/lib/gcc/i686-linux-gnu/6/adalib/
+-shared
+-shared-libgcc
+-lgnat-6
+[RUN PATH OPTION]
+/usr/lib/gcc/i686-linux-gnu/6/adalib/
+/usr/lib

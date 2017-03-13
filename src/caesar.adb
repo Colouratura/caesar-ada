@@ -22,10 +22,8 @@
 --
 -- to encipher: ~$ ./bin/caesar --encipher 3 'some text to encipher'
 -- to decipher: ~$ ./bin/caesar --decipher 3 'some text to decipher'
-
 with Ada.Text_IO;
 with Ada.Command_Line;
-with Ada.Strings.Bounded;
 
 procedure Caesar
 is
@@ -33,15 +31,15 @@ is
    package IO renames Ada.Text_IO;
    package CL renames Ada.Command_Line;
    
-   -- create a new type for bounded strings
-   package BString is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 4096);
-   use BString;
-   
    -- create some variables to hold our argument parsing state
-   Text_Argument : BString.Bounded_String;  -- stores the text argument
-   Temp_Argument : BString.Bounded_String;  -- stores a textual argument
-   Key_Argument  : Integer;                 -- stores the key argument
-   Mode          : Boolean;                 -- stores whether or not this is a cipher operation
+   Key_Argument  : Integer;  -- stores the key argument
+   Mode          : Boolean;  -- stores whether or not this is a cipher operation
+   
+   -- ASCII value constants
+   ASCII_la : constant Integer := 97;
+   ASCII_lz : constant Integer := 122;
+   ASCII_UA : constant Integer := 65;
+   ASCII_UZ : constant Integer := 90;
    
    -- Shift_Character
    --     Takes a valid ASCII letter and either shifts it up in value by one
@@ -52,7 +50,9 @@ is
    -- Parameter: (Integer)   Key           - Places to shift
    -- Parameter: (Boolean)   Mode          - Whether or not this is a deciphering
    -- Return:    (Character)               - Valid ASCII character result
-   function Shift_Character (In_Character: Character; Key: Integer; Mode: Boolean)
+   function Shift_Character (In_Character : Character;
+			     Key          : Integer;
+			     Mode         : Boolean)
 			    return Character
    is
       Temp_Character  : Integer;
@@ -64,18 +64,18 @@ is
       Key_Text_Sub    := Key_Text_Sum - (Key * 2);
       
       if Mode = TRUE then
-	 if Key_Text_Sum > 122 then
-	    Temp_Character := ((Key_Text_Sum - 122) + 97);
-	 elsif Key_Text_Sum > 90 and Key_Text_Sum < 97 then
-	    Temp_Character := ((Key_Text_Sum - 90) + 65);
+	 if Key_Text_Sum > ASCII_lz then
+	    Temp_Character := ((Key_Text_Sum - ASCII_lz) + ASCII_la);
+	 elsif Key_Text_Sum > ASCII_UZ and Key_Text_Sum < ASCII_la then
+	    Temp_Character := ((Key_Text_Sum - ASCII_UZ) + ASCII_UA);
 	 else
 	    Temp_Character := Key_Text_Sum;
 	 end if;
       elsif Mode = FALSE then
-	 if Key_Text_Sub < 97 and Key_Text_Sub > 90 then
-	    Temp_Character := (122 - (97 - Key_Text_Sub));
-	 elsif Key_Text_Sub < 65 then
-	    Temp_Character := (90 - (65 - Key_Text_Sub));
+	 if Key_Text_Sub < ASCII_la and Key_Text_Sub > ASCII_UZ then
+	    Temp_Character := (ASCII_lz - (ASCII_la - Key_Text_Sub));
+	 elsif Key_Text_Sub < ASCII_UA then
+	    Temp_Character := (ASCII_UZ - (ASCII_UA - Key_Text_Sub));
 	 else
 	    Temp_Character := Key_Text_Sub;
 	 end if;
@@ -94,16 +94,16 @@ is
    --
    -- Parameter: (Character) In_Character - Character to be evaluated
    -- Return:    (Boolean)                - Result of whether or not the input is valid
-   function Is_Valid_Character (In_Character: Character)
+   function Is_Valid_Character (In_Character : Character)
 			       return Boolean
    is
       Character_Code : Integer;
    begin
       Character_Code := Character'Pos (In_Character);
       
-      if Character_Code >= 65 and Character_Code <= 90 then
+      if Character_Code >= ASCII_UA and Character_Code <= ASCII_UZ then
 	 return TRUE;
-      elsif Character_Code >= 97 and Character_Code <= 122 then
+      elsif Character_Code >= ASCII_la and Character_Code <= ASCII_lz then
 	 return TRUE;
       end if;
       
@@ -113,42 +113,38 @@ is
    -- Cipher
    --     Takes a string and applies the cipher algorithm to it
    --
-   -- Parameter (BString) Text    - Text to be ciphered
+   -- Parameter (String)  Text    - Text to be ciphered
    -- Parameter (Integer) Key     - Places to shift
    -- Parameter (Boolean) Mode    - Whether to encipher or decipher
-   -- Return:   (BString)         - Text that has been ciphered
-   function Cipher (Text: BString.Bounded_String; Key: Integer; Mode: Boolean)
-		   return BString.Bounded_String
+   procedure Cipher (Text : in String;
+		     Key  : in Integer;
+		     Mode : in Boolean)
    is
-      I       : Integer := 1;            -- loop iterator
-      Out_Text : BString.Bounded_String;  -- output string
+      I : Integer := 1; -- loop iterator
    begin
-      for I in 1 .. Length (Text) loop
-	 if Is_Valid_Character (BString.Element (Text, I)) = TRUE then
-	    Out_Text := Out_Text & Shift_Character (BString.Element (Text, I), Key, Mode);
+      for I in 1 .. Text'Length loop
+	 if Is_Valid_Character (Text (I)) = TRUE then
+	    IO.Put (Shift_Character (Text (I), Key, Mode));
 	 else
-	    Out_Text := Out_Text & BString.Element (Text, I);
+	    IO.Put (Text (I));
 	 end if;
       end loop;
       
-      return Out_Text;
+      IO.New_Line (1);
    end Cipher;
-begin
    
+begin
    -- check number of arguments (expects 3)
    if CL.Argument_Count /= 3 then
       IO.Put_Line ("Unexpected amount of arguments!");
       return;
    end if;
    
-   -- grab the mode
-   Temp_Argument := BString.To_Bounded_String (CL.Argument (1));
-   
    -- check if it is a mode flag
    -- memo: argument 1 must be a mode flag!
-   if Temp_Argument = "--decipher" then
+   if CL.Argument (1) = "--decipher" then
       Mode := FALSE;
-   elsif Temp_Argument = "--encipher" then
+   elsif CL.Argument (1) = "--encipher" then
       Mode := TRUE;
    else
       IO.Put_Line ("Could not find mode flag at position one.");
@@ -156,11 +152,8 @@ begin
    end if;
    
    -- grab the text and the key
-   Text_Argument := BString.To_Bounded_String (CL.Argument (3));
-   Temp_Argument := BString.To_Bounded_String (CL.Argument (2));
+   Key_Argument := Integer'Value (CL.Argument (2));
    
-   Key_Argument := Integer'Value (BString.To_String (Temp_Argument));
-   
-   -- print our cipher-text
-   IO.Put_Line (BString.To_String (Cipher (Text_Argument, Key_Argument, Mode)));
+   -- generate our cipher-text
+   Cipher (CL.Argument (3), Key_Argument, Mode);
 end Caesar;
