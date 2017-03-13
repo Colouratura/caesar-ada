@@ -34,60 +34,57 @@ is
    package CL renames Ada.Command_Line;
    
    -- create a new type for bounded strings
-   package BoundedString is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 4096);
-   use BoundedString;
+   package BString is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 4096);
+   use BString;
    
    -- create some variables to hold our argument parsing state
-   TextArgument : BoundedString.Bounded_String;  -- stores the text argument
-   TempArgument : BoundedString.Bounded_String;  -- stores a textual argument
-   KeyArgument  : Integer;                       -- stores the key argument
-   Mode         : Boolean;                       -- stores whether or not this is a cipher operation
+   Text_Argument : BString.Bounded_String;  -- stores the text argument
+   Temp_Argument : BString.Bounded_String;  -- stores a textual argument
+   Key_Argument  : Integer;                 -- stores the key argument
+   Mode          : Boolean;                 -- stores whether or not this is a cipher operation
    
-   -- ShiftCharacter
+   -- Shift_Character
    --     Takes a valid ASCII letter and either shifts it up in value by one
    --     or, in the case of 'z' and 'Z', assigns it the value of 'a' or 'A'
    --     or vice versa depending on the mode.
    --
-   -- Parameter: (Character) InCharacter  - Valid ASCII character to shift
-   -- Parameter: (Integer)   Key          - Places to shift
-   -- Parameter: (Boolean)   Mode         - Whether or not this is a deciphering
-   -- Return:    (Character)              - Valid ASCII character result
-   function ShiftCharacter (InCharacter: Character; Key: Integer; Mode: Boolean) return Character
+   -- Parameter: (Character) In_Character  - Valid ASCII character to shift
+   -- Parameter: (Integer)   Key           - Places to shift
+   -- Parameter: (Boolean)   Mode          - Whether or not this is a deciphering
+   -- Return:    (Character)               - Valid ASCII character result
+   function Shift_Character (In_Character: Character; Key: Integer; Mode: Boolean)
+			    return Character
    is
-      TempCharacter : Integer;
-      KeyTextSum    : Integer;
-      KeyTextSub    : Integer;
+      Temp_Character  : Integer;
+      Key_Text_Sum    : Integer;
+      Key_Text_Sub    : Integer;
    begin
-      TempCharacter := Character'Pos (InCharacter);
-      KeyTextSum    := TempCharacter + Key;
-      KeyTextSub    := KeyTextSum - (Key * 2);
-      
-      IO.Put_Line (Integer'Image (TempCharacter));
+      Temp_Character  := Character'Pos (In_Character);
+      Key_Text_Sum    := Temp_Character + Key;
+      Key_Text_Sub    := Key_Text_Sum - (Key * 2);
       
       if Mode = TRUE then
-	 if KeyTextSum > 122 then
-	    TempCharacter := ((KeyTextSum - 122) + 97);
-	 elsif KeyTextSum > 90 and KeyTextSum < 97 then
-	    TempCharacter := ((KeyTextSum - 90) + 65);
+	 if Key_Text_Sum > 122 then
+	    Temp_Character := ((Key_Text_Sum - 122) + 97);
+	 elsif Key_Text_Sum > 90 and Key_Text_Sum < 97 then
+	    Temp_Character := ((Key_Text_Sum - 90) + 65);
 	 else
-	    TempCharacter := KeyTextSum;
+	    Temp_Character := Key_Text_Sum;
 	 end if;
       elsif Mode = FALSE then
-	 if KeyTextSub < 97 and KeyTextSub > 90 then
-	    TempCharacter := (122 - (97 - KeyTextSub));
-	 elsif KeyTextSub < 65 then
-	    TempCharacter := (90 - (65 - KeyTextSub));
+	 if Key_Text_Sub < 97 and Key_Text_Sub > 90 then
+	    Temp_Character := (122 - (97 - Key_Text_Sub));
+	 elsif Key_Text_Sub < 65 then
+	    Temp_Character := (90 - (65 - Key_Text_Sub));
 	 else
-	    TempCharacter := KeyTextSub;
+	    Temp_Character := Key_Text_Sub;
 	 end if;
       end if;
       
-      IO.Put_Line (Integer'Image (TempCharacter));
-      
-      return Character'Val (TempCharacter);
-   end ShiftCharacter;
+      return Character'Val (Temp_Character);
+   end Shift_Character;
    
-   -- IsValidCharacter
+   -- Is_Valid_Character
    --     Takes a character and returns whether or not it is considered to be
    --     a valid ASCII character that can be shifted.
    --
@@ -95,45 +92,46 @@ is
    --     If the character is invalid then it should be readded to the string
    --     as is, effectively ignoring it.
    --
-   -- Parameter: (Character) InCharacter - Character to be evaluated
-   -- Return:    (Boolean)               - Result of whether or not the input is valid
-   function IsValidcharacter (InCharacter: Character) return Boolean
+   -- Parameter: (Character) In_Character - Character to be evaluated
+   -- Return:    (Boolean)                - Result of whether or not the input is valid
+   function Is_Valid_Character (In_Character: Character)
+			       return Boolean
    is
-      TempCharacter : Integer;
+      Character_Code : Integer;
    begin
-      TempCharacter := Character'Pos (InCharacter);
+      Character_Code := Character'Pos (In_Character);
       
-      if TempCharacter >= 65 and TempCharacter <= 90 then
+      if Character_Code >= 65 and Character_Code <= 90 then
 	 return TRUE;
-      elsif TempCharacter >= 97 and TempCharacter <= 122 then
+      elsif Character_Code >= 97 and Character_Code <= 122 then
 	 return TRUE;
       end if;
       
       return FALSE;
-   end IsValidCharacter;
+   end Is_Valid_Character;
    
    -- Cipher
    --     Takes a string and applies the cipher algorithm to it
    --
-   -- Parameter (Bounded_String) Text    - Text to be ciphered
-   -- Parameter (Integer)        Key     - Places to shift
-   -- Parameter (Boolean)        Mode    - Whether to encipher or decipher
-   -- Return:   (Bounded_String)         - Text that has been ciphered
-   function Cipher (Text: BoundedString.Bounded_String; Key: Integer; Mode: Boolean)
-		   return BoundedString.Bounded_String
+   -- Parameter (BString) Text    - Text to be ciphered
+   -- Parameter (Integer) Key     - Places to shift
+   -- Parameter (Boolean) Mode    - Whether to encipher or decipher
+   -- Return:   (BString)         - Text that has been ciphered
+   function Cipher (Text: BString.Bounded_String; Key: Integer; Mode: Boolean)
+		   return BString.Bounded_String
    is
-      I : Integer := 1;                        -- loop iterator
-      OutText : BoundedString.Bounded_String;  -- output string
+      I       : Integer := 1;            -- loop iterator
+      Out_Text : BString.Bounded_String;  -- output string
    begin
       for I in 1 .. Length (Text) loop
-	 if IsValidCharacter (BoundedString.Element (Text, I)) = TRUE then
-	    OutText := OutText & ShiftCharacter (BoundedString.Element (Text, I), Key, Mode);
+	 if Is_Valid_Character (BString.Element (Text, I)) = TRUE then
+	    Out_Text := Out_Text & Shift_Character (BString.Element (Text, I), Key, Mode);
 	 else
-	    OutText := OutText & BoundedString.Element (Text, I);
+	    Out_Text := Out_Text & BString.Element (Text, I);
 	 end if;
       end loop;
       
-      return OutText;
+      return Out_Text;
    end Cipher;
 begin
    
@@ -144,13 +142,13 @@ begin
    end if;
    
    -- grab the mode
-   TempArgument := BoundedString.To_Bounded_String (CL.Argument (1));
+   Temp_Argument := BString.To_Bounded_String (CL.Argument (1));
    
    -- check if it is a mode flag
    -- memo: argument 1 must be a mode flag!
-   if TempArgument = "--decipher" then
+   if Temp_Argument = "--decipher" then
       Mode := FALSE;
-   elsif TempArgument = "--encipher" then
+   elsif Temp_Argument = "--encipher" then
       Mode := TRUE;
    else
       IO.Put_Line ("Could not find mode flag at position one.");
@@ -158,13 +156,11 @@ begin
    end if;
    
    -- grab the text and the key
-   TextArgument := BoundedString.To_Bounded_String (CL.Argument (3));
-   TempArgument := BoundedString.To_Bounded_String (CL.Argument (2));
+   Text_Argument := BString.To_Bounded_String (CL.Argument (3));
+   Temp_Argument := BString.To_Bounded_String (CL.Argument (2));
    
-   KeyArgument := Integer'Value (BoundedString.To_String (TempArgument));
-   
-   IO.Put_Line (Integer'Image (KeyArgument));
+   Key_Argument := Integer'Value (BString.To_String (Temp_Argument));
    
    -- print our cipher-text
-   IO.Put_Line (BoundedString.To_String (Cipher (TextArgument, KeyArgument, Mode)));
+   IO.Put_Line (BString.To_String (Cipher (Text_Argument, Key_Argument, Mode)));
 end Caesar;
