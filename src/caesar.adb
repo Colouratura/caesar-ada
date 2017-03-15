@@ -65,17 +65,17 @@ is
       
       if Mode = TRUE then
 	 if Key_Text_Sum > ASCII_lz then
-	    Temp_Character := ((Key_Text_Sum - ASCII_lz) + ASCII_la);
+	    Temp_Character := ((Key_Text_Sum - ASCII_lz) + ASCII_La - 1);
 	 elsif Key_Text_Sum > ASCII_UZ and Key_Text_Sum < ASCII_la then
-	    Temp_Character := ((Key_Text_Sum - ASCII_UZ) + ASCII_UA);
+	    Temp_Character := ((Key_Text_Sum - ASCII_UZ) + ASCII_UA - 1);
 	 else
 	    Temp_Character := Key_Text_Sum;
 	 end if;
       elsif Mode = FALSE then
 	 if Key_Text_Sub < ASCII_la and Key_Text_Sub > ASCII_UZ then
-	    Temp_Character := (ASCII_lz - (ASCII_la - Key_Text_Sub));
+	    Temp_Character := (1 + ASCII_lz - (ASCII_la - Key_Text_Sub));
 	 elsif Key_Text_Sub < ASCII_UA then
-	    Temp_Character := (ASCII_UZ - (ASCII_UA - Key_Text_Sub));
+	    Temp_Character := (1 + ASCII_UZ - (ASCII_UA - Key_Text_Sub));
 	 else
 	    Temp_Character := Key_Text_Sub;
 	 end if;
